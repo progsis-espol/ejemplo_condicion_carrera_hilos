@@ -1,14 +1,17 @@
-DEPS = common.h
+DEPS = common.h sha256.h
 CFLAGS = -Wall -c
 
 .PHONY: all debug sanitize clean
-all: server client
+all: server client test
 
-server: server.o common.o $(DEPS)
-	gcc -o $@ server.o common.o $(DFLAGS)
+server: server.o common.o sha256.o $(DEPS)
+	gcc -o $@ server.o common.o sha256.o $(DFLAGS)
 
 client: client.o common.o $(DEPS)
 	gcc -o $@ client.o common.o $(DFLAGS)
+
+test: test.o common.o $(DEPS)
+	gcc -o $@ test.o common.o $(DFLAGS)
 
 %.o: %.c $(DEPS)
 	gcc $(CFLAGS) $< $(DFLAGS)
@@ -23,4 +26,4 @@ sanitize: DFLAGS = -fsanitize=address,undefined
 sanitize: clean all
 
 clean:
-	rm -rf server client *.o
+	rm -rf server client test *.o *~

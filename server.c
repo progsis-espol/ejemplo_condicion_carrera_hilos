@@ -1,9 +1,12 @@
 #include <getopt.h>
 #include <limits.h>
+#include <pthread.h>
 
+#include "sha256.h"
 #include "common.h"
 
 void atender_cliente(int connfd);
+void *thread(void *varg);
 
 void print_help(char *command)
 {
@@ -21,12 +24,11 @@ int main(int argc, char **argv)
 	int opt;
 
 	//Sockets
-	int listenfd, connfd;
+	int listenfd, *connfdp;
 	unsigned int clientlen;
 	//Direcciones y puertos
 	struct sockaddr_in clientaddr;
-	struct hostent *hp;
-	char *haddrp, *port;
+	char *port;
 
 	while ((opt = getopt (argc, argv, "h")) != -1){
 		switch(opt)
@@ -63,29 +65,35 @@ int main(int argc, char **argv)
 
 	printf("server escuchando en puerto %s...\n", port);
 
+	pthread_t tid;
 	while (seguir) {
 		clientlen = sizeof(clientaddr);
-		connfd = accept(listenfd, (struct sockaddr *)&clientaddr, &clientlen);
-
-		/* Determina la IP y nombre de dominio del cliente */
-		hp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr,
-					sizeof(clientaddr.sin_addr.s_addr), AF_INET);
-		haddrp = inet_ntoa(clientaddr.sin_addr);
-
-		printf("server conectado a %s (%s)\n", hp->h_name, haddrp);
-		atender_cliente(connfd);
-		printf("server desconectando a %s (%s)\n", hp->h_name, haddrp);
-
-		close(connfd);
+		connfdp = malloc(sizeof(int));
+		*connfdp = accept(listenfd, (struct sockaddr *)&clientaddr, &clientlen);
+		pthread_create(&tid, NULL, thread, connfdp);
 	}
 
 	return 0;
+}
+
+void *thread(void *varg)
+{
+	int connfd = *((int *)varg);
+	pthread_detach(pthread_self());
+	free(varg);
+	atender_cliente(connfd);
+	close(connfd);
+
+	return NULL;
 }
 
 void atender_cliente(int connfd)
 {
 	int n;
 	char buf[MAXLINE] = {0};
+
+	SHA256_CTX ctx;
+	BYTE sha256_buf[SHA256_BLOCK_SIZE];
 
 	while(1){
 		n = read(connfd, buf, MAXLINE);
@@ -94,8 +102,16 @@ void atender_cliente(int connfd)
 
 		printf("Recibido: %s", buf);
 
+		//Ignora '\n' asumiendo que esta al final de buf
+		n--;
+
+		//hash sha256
+		sha256_init(&ctx);
+		sha256_update(&ctx, (BYTE *) buf, n);
+		sha256_final(&ctx, sha256_buf);
+
 		//Reenvía el mensaje al cliente
-		n = write(connfd, buf, n);
+		n = write(connfd, sha256_buf, SHA256_BLOCK_SIZE);
 		if(n <= 0)
 			return;
 

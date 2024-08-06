@@ -1,6 +1,7 @@
 #include <getopt.h>
 #include <limits.h>
 
+#include "sha256.h"
 #include "common.h"
 
 void print_help(char *command)
@@ -10,6 +11,16 @@ void print_help(char *command)
 	printf(" %s -h\n", command);
 	printf("Opciones:\n");
 	printf(" -h\t\t\tAyuda, muestra este mensaje\n");
+}
+
+//Imprime cadena de bytes en formato hexadecimal
+void print_hex(const BYTE* data, size_t size)
+{
+    int i;
+    for(i = 0; i < size; ++i)
+        printf("%02x", data[i]);
+
+    printf("\n");
 }
 
 int main(int argc, char **argv)
@@ -23,7 +34,7 @@ int main(int argc, char **argv)
 
 	//Lectura desde consola
 	char *linea_consola;
-	char read_buffer[MAXLINE] = {0};
+	BYTE sha256_buf[SHA256_BLOCK_SIZE] = {0};
 	size_t max = MAXLINE;
 	ssize_t n, l = 0;
 
@@ -78,12 +89,11 @@ int main(int argc, char **argv)
 		if(n<=0)
 			break;
 
-		n = read(clientfd, read_buffer, MAXLINE); //Lee respuesta del servidor
+		n = read(clientfd, sha256_buf, SHA256_BLOCK_SIZE); //Lee respuesta del servidor
 		if(n<=0)
 			break;
 
-		printf("Recibido: %s", read_buffer);
-		memset(read_buffer,0,MAXLINE); //Encerar el buffer
+		print_hex(sha256_buf, SHA256_BLOCK_SIZE);
 
 		//Volver a leer desde consola
 		printf("> ");

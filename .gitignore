@@ -1,6 +1,7 @@
 # Binarios ejecutables
 server
 client
+test
 
 # Object files
 *.o

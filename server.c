@@ -67,7 +67,6 @@ int main(int argc, char **argv)
 
 	pthread_t tid;
 	while (seguir) {
-		clientlen = sizeof(clientaddr);
 		connfdp = malloc(sizeof(int));
 		*connfdp = accept(listenfd, (struct sockaddr *)&clientaddr, &clientlen);
 		pthread_create(&tid, NULL, thread, connfdp);

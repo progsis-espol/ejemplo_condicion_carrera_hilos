@@ -1,5 +1,5 @@
 # Ejemplo condiciones de carrera con hilos
-Este repositorio contiene código ejemplo que permite la demostración de los efectos de condiciones de carrera en una aplicación cliente - servidor multihilo. En este ejemplo, el usuario ingresa una línea de texto desde el cliente, el cliente la envia al servidor, el servido calcula el hash *sha256* de la cadena de texto y retorna este resultado en formato binario al cliente. El código de esta aplicación está basado en el capítulo 11 de [Computer Systems: A Programmer's Perspective](http://csapp.cs.cmu.edu/3e/home.html).
+Este repositorio contiene código ejemplo que permite la demostración de los efectos de condiciones de carrera en una aplicación cliente - servidor multihilo. En este ejemplo, el usuario ingresa una línea de texto desde el cliente, el cliente la envía al servidor, el servido calcula el hash *sha256* de la cadena de texto y retorna este resultado en formato binario al cliente. El código de esta aplicación está basado en el capítulo 11 de [Computer Systems: A Programmer's Perspective](http://csapp.cs.cmu.edu/3e/home.html).
 
 ## Uso
 Para ejecutar el servidor se debe especificar como argumento el puerto TCP, por ejemplo:
@@ -34,11 +34,11 @@ Ingrese texto para enviar al servidor, Ctrl+c para terminar...
 > 
 ```
 
-El código en [test.c](test.c) envia la palabra "*test*" al servidor y comprueba si el servidor responde con el hash correcto. Muestra "*OK*" si es correcto e inmediatamente vuelve a enviar un nuevo "*test*". Muestra "*BOOM*" y se desconecta del servidor si es incorrecto.
+El código en [test.c](test.c) envía la palabra "*test*" al servidor y comprueba si el servidor responde con el hash correcto. Muestra "*OK*" si es correcto e inmediatamente vuelve a enviar un nuevo "*test*". Caso contrario, muestra "*BOOM*" y se desconecta del servidor.
 
 ## Demostración
 
-Existen varias formas de provocar una condición de carrera en esta aplicación. La primera eliminando el uso de memoria dinámica para almacenar el descriptor de archivo del socket de conexión en el servidor [server.c](server.c):
+Existen varias formas de provocar una condición de carrera en esta aplicación. La primera es eliminando el uso de memoria dinámica para almacenar el descriptor de archivo del socket de conexión en el servidor en el archivo [server.c](server.c):
 
 ```C
  68         pthread_t tid;                                                                                         
@@ -49,7 +49,7 @@ Existen varias formas de provocar una condición de carrera en esta aplicación.
  73         }  
 ```
 
-puede modificarse en las líneas 70 - 72 a:
+aquí se pueden modificar las líneas 70 - 72 a:
 
 ```C
  68         pthread_t tid;                                                                                         
@@ -60,7 +60,7 @@ puede modificarse en las líneas 70 - 72 a:
  73         }
 ```
 
-otra forma de condición de carrera es modificando *void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len)* en [sha256.c](sha256.c) para que no sea reentrante:
+Otra forma de condición de carrera es modificando la función *void sha256_update* en [sha256.c](sha256.c) para que no sea reentrante:
 
 ```C
  99 void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len)                                             
@@ -72,7 +72,7 @@ otra forma de condición de carrera es modificando *void sha256_update(SHA256_CT
 105                 ctx->datalen++;  
 ```
 
-puede modificarse en la línea 101 a:
+la línea 101 puede modificarse así:
 
 ```C
  99 void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len)                                             
@@ -84,7 +84,7 @@ puede modificarse en la línea 101 a:
 105                 ctx->datalen++;  
 ```
 
-Para observar el efecto de las condiciones de carrera es necesario conectar varios clientes *test* de manera simultanea al servidor.
+Para observar el efecto de las condiciones de carrera es necesario conectar varios clientes *test* de manera simultánea al servidor.
 
 ## Compilación
 Para compilar cliente, servidor y test:
